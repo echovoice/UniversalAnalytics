@@ -722,7 +722,7 @@ namespace Echovoice.UniversalAnalytics
                 parameters.Add("de", request.ContentEncoding.HeaderName.ToUpper());
 
             // user language
-            if (request.UserLanguages.Length > 0)
+            if (request.UserLanguages != null && request.UserLanguages.Length > 0)
                 parameters.Add("ul", string.Join(";", request.UserLanguages));
 
             // end
