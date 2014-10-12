@@ -1,0 +1,23 @@
+﻿<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>UniversalAnalytics</id>
+    <version>$version$</version>
+    <title>Google Analytics Tracker</title>
+    <authors>Echovoice</authors>
+    <owners>echovoice,artfulhacker</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <projectUrl>https://github.com/proctorio/UniversalAnalytics</projectUrl>
+    <licenseUrl>https://github.com/proctorio/UniversalAnalytics/blob/master/LICENSE</licenseUrl>
+    <description>A C# library for sending server-side tracking data to Google Analytics using the new Measurement Protocol (Universal Analytics)</description>
+    <releaseNotes>Initial commit.</releaseNotes>
+    <copyright>Copyright 2014</copyright>
+    <language>en-US</language>
+    <tags>Google Universal Analytics Tracker Measurement Protocol Proctorio</tags>
+  </metadata>
+  <files>
+    <file src="UniversalAnalytics.dll" target="lib" />
+    <file src="UniversalAnalytics.pdb" target="lib" />
+    <file src="UniversalAnalytics.xml" target="lib" />
+  </files>
+</package>
