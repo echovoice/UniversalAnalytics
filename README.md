@@ -10,7 +10,7 @@ This library is available on Nuget as [UniversalAnalytics](https://www.nuget.org
 Why use Google Universal Analytics?
 ============================
 You get **REAL** user data inside Google Analytics.
-Thanks to this new API from Google, we can actually **send visitors real IP and User agent**.
+Thanks to this new API from Google, we can actually **send a visitors real IP and User agent**.
 
 
 Page Tracking Usage
