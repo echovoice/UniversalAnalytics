@@ -130,8 +130,8 @@ Send data from both the web and server.
 
 Library Restrictions?
 ============================
- - ASP.NET Managed Apps Only
- - **.NET 4.5.2**
+ - ~~ASP.NET Managed Apps Only~~
+ - **.NET 4.5.2 Nuget, but will compile as .NET 4.0 from sources**
 
 We needed to use the new HostingEnvironment.QueueBackgroundWorkItem method found in .NET 4.5.2 to ensure we didn't have to worry about processes being shut down prematurely by IIS.
 

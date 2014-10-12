@@ -11,7 +11,7 @@ namespace UniversalAnalytics.ASPSample
     public class Global : System.Web.HttpApplication
     {
         // initialize a static (thread-safe) tracker
-        public static UATracker tracker = new UATracker("UA-XXXXXXXX-X");
+        public static UATracker tracker = new UATracker("UA-XXXXXX-X");
 
         protected void Application_Start(object sender, EventArgs e)
         {

@@ -12,13 +12,13 @@ Global
 		SccNumberOfProjects = 3
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = https://echovoice.visualstudio.com/defaultcollection
-		SccProjectUniqueName0 = UniversalAnalytics.ASPSample\\UniversalAnalytics.ASPSample.csproj
-		SccProjectName0 = UniversalAnalytics.ASPSample
-		SccLocalPath0 = UniversalAnalytics.ASPSample
-		SccProjectUniqueName1 = UniversalAnalytics\\UniversalAnalytics.csproj
-		SccProjectName1 = UniversalAnalytics
-		SccLocalPath1 = UniversalAnalytics
-		SccLocalPath2 = .
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = UniversalAnalytics.ASPSample\\UniversalAnalytics.ASPSample.csproj
+		SccProjectName1 = UniversalAnalytics.ASPSample
+		SccLocalPath1 = UniversalAnalytics.ASPSample
+		SccProjectUniqueName2 = UniversalAnalytics\\UniversalAnalytics.csproj
+		SccProjectName2 = UniversalAnalytics
+		SccLocalPath2 = UniversalAnalytics
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

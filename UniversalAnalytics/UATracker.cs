@@ -124,12 +124,8 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackEvent(string eventCategory, string eventAction, UAClient uaclient = null)
         {
-            // make sure we don't need it passed in
-            if (IsHttpRequestAvailable)
-            {
-                // upfill and build
-                TrackEvent(new HttpContextWrapper(HttpContext.Current), eventCategory, eventAction, null, uaclient);
-            }
+            // upfill and build
+            TrackEvent((IsHttpRequestAvailable) ? new HttpContextWrapper(HttpContext.Current) : null, eventCategory, eventAction, null, uaclient);
         }
 
         /// <summary>
@@ -154,12 +150,8 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackEvent(string eventCategory, string eventAction, string eventLabel, UAClient uaclient = null)
         {
-            // make sure we don't need it passed in
-            if (IsHttpRequestAvailable)
-            {
-                // upfill and build
-                TrackEvent(new HttpContextWrapper(HttpContext.Current), eventCategory, eventAction, eventLabel, -1, uaclient);
-            }
+            // upfill and build
+            TrackEvent((IsHttpRequestAvailable) ? new HttpContextWrapper(HttpContext.Current) : null, eventCategory, eventAction, eventLabel, -1, uaclient);
         }
 
         /// <summary>
@@ -186,12 +178,8 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackEvent(string eventCategory, string eventAction, string eventLabel, int eventValue, UAClient uaclient = null)
         {
-            // make sure we don't need it passed in
-            if (IsHttpRequestAvailable)
-            {
-                // upfill and build
-                TrackEvent(new HttpContextWrapper(HttpContext.Current), eventCategory, eventAction, eventLabel, eventValue, uaclient);
-            }
+            // upfill and build
+            TrackEvent((IsHttpRequestAvailable) ? new HttpContextWrapper(HttpContext.Current) : null, eventCategory, eventAction, eventLabel, eventValue, uaclient);
         }
 
         /// <summary>
@@ -209,7 +197,7 @@ namespace Echovoice.UniversalAnalytics
             if (uaclient == null) uaclient = new UAClient();
 
             // build the payload
-            StringBuilder data = BuildPayload(BuildBasePayload(httpContext.Request, uaclient), BuildEventTrackPayload(eventCategory, eventAction, eventLabel, eventValue));
+            StringBuilder data = BuildPayload(BuildBasePayload(httpContext, uaclient), BuildEventTrackPayload(eventCategory, eventAction, eventLabel, eventValue));
 
             // build the http request
             HttpWebRequest request = BuildRequest(data);
@@ -217,7 +205,7 @@ namespace Echovoice.UniversalAnalytics
             // send sync and fail silently
             try
             {
-                request.GetResponse();
+                using (WebResponse response = request.GetResponse()) { }
             }
             catch { }
         }
@@ -230,12 +218,8 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackEventAsync(string eventCategory, string eventAction, UAClient uaclient = null)
         {
-            // make sure we don't need it passed in
-            if (IsHttpRequestAvailable)
-            {
-                // upfill and build
-                TrackEventAsync(new HttpContextWrapper(HttpContext.Current), eventCategory, eventAction, null, uaclient);
-            }
+            // upfill and build
+            TrackEventAsync((IsHttpRequestAvailable) ? new HttpContextWrapper(HttpContext.Current) : null, eventCategory, eventAction, null, uaclient);
         }
 
         /// <summary>
@@ -260,12 +244,8 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackEventAsync(string eventCategory, string eventAction, string eventLabel, UAClient uaclient = null)
         {
-            // make sure we don't need it passed in
-            if (IsHttpRequestAvailable)
-            {
-                // upfill and build
-                TrackEventAsync(new HttpContextWrapper(HttpContext.Current), eventCategory, eventAction, eventLabel, -1, uaclient);
-            }
+            // upfill and build
+            TrackEventAsync((IsHttpRequestAvailable) ? new HttpContextWrapper(HttpContext.Current) : null, eventCategory, eventAction, eventLabel, -1, uaclient);
         }
 
         /// <summary>
@@ -292,12 +272,8 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackEventAsync(string eventCategory, string eventAction, string eventLabel, int eventValue, UAClient uaclient = null)
         {
-            // make sure we don't need it passed in
-            if (IsHttpRequestAvailable)
-            {
-                // upfill and build
-                TrackEventAsync(new HttpContextWrapper(HttpContext.Current), eventCategory, eventAction, eventLabel, eventValue, uaclient);
-            }
+            // upfill and build
+            TrackEventAsync((IsHttpRequestAvailable) ? new HttpContextWrapper(HttpContext.Current) : null, eventCategory, eventAction, eventLabel, eventValue, uaclient);
         }
 
         /// <summary>
@@ -315,22 +291,13 @@ namespace Echovoice.UniversalAnalytics
             if (uaclient == null) uaclient = new UAClient();
 
             // build the payload
-            StringBuilder data = BuildPayload(BuildBasePayload(httpContext.Request, uaclient), BuildEventTrackPayload(eventCategory, eventAction, eventLabel, eventValue));
+            StringBuilder data = BuildPayload(BuildBasePayload(httpContext, uaclient), BuildEventTrackPayload(eventCategory, eventAction, eventLabel, eventValue));
 
             // build the http request
             HttpWebRequest request = BuildRequest(data);
 
-            // send async and fail silently
-            // The HostingEnvironment.QueueBackgroundWorkItem method lets you schedule small background work items.
-            // ASP.NET tracks these items and prevents IIS from abruptly terminating the worker process until all background work items have completed.
-            HostingEnvironment.QueueBackgroundWorkItem(ct =>
-            {
-                try
-                {
-                    request.GetResponse();
-                }
-                catch { }
-            });
+            // send it async
+            ProcessAsync(request);
         }
 
         /// <summary>
@@ -345,6 +312,11 @@ namespace Echovoice.UniversalAnalytics
                 // upfill and build
                 TrackPageView(new HttpContextWrapper(HttpContext.Current), null, uaclient);
             }
+            else
+            {
+                // google doesnt accept page views without a url
+                throw new InvalidOperationException("Unable to find a valid HttpContext.Current, Google requires a valid URL to process page views.");
+            }
         }
 
         /// <summary>
@@ -354,6 +326,9 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackPageView(HttpContextBase httpContext, UAClient uaclient = null)
         {
+            // check for null context
+            if (httpContext == null) throw new ArgumentNullException("httpContext", "Null HttpContextBase, Google requires a valid URL to process page views.");
+
             // upfill and build
             TrackPageView(httpContext, null, uaclient);
         }
@@ -372,7 +347,12 @@ namespace Echovoice.UniversalAnalytics
                 HttpContextBase httpContext = new HttpContextWrapper(HttpContext.Current);
 
                 // upfill and build
-                TrackPageView(httpContext, pageTitle, httpContext.Request.Url.PathAndQuery, uaclient);
+                TrackPageView(httpContext, pageTitle, (httpContext != null && httpContext.Request != null && httpContext.Request.Url != null) ? httpContext.Request.Url.PathAndQuery : null, uaclient);
+            }
+            else
+            {
+                // google doesnt accept page views without a url
+                throw new InvalidOperationException("Unable to find a valid HttpContext.Current, Google requires a valid URL to process page views.");
             }
         }
 
@@ -384,8 +364,11 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackPageView(HttpContextBase httpContext, string pageTitle, UAClient uaclient = null)
         {
+            // check for null context
+            if (httpContext == null) throw new ArgumentNullException("httpContext", "Null HttpContextBase, Google requires a valid URL to process page views.");
+
             // upfill and build
-            TrackPageView(httpContext, pageTitle, httpContext.Request.Url.PathAndQuery, uaclient);
+            TrackPageView(httpContext, pageTitle, (httpContext != null && httpContext.Request != null && httpContext.Request.Url != null) ? httpContext.Request.Url.PathAndQuery : null, uaclient);
         }
 
         /// <summary>
@@ -396,15 +379,14 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackPageView(string pageTitle, string pageUrl, UAClient uaclient = null)
         {
-            // make sure we don't need it passed in
-            if (IsHttpRequestAvailable)
-            {
-                // extract the context
-                HttpContextBase httpContext = new HttpContextWrapper(HttpContext.Current);
+            // check for empty page url
+            if (string.IsNullOrWhiteSpace(pageUrl)) throw new ArgumentNullException("pageUrl", "Google requires a valid URL to process page views.");
 
-                // upfill and build
-                TrackPageView(httpContext, pageTitle, pageUrl, httpContext.Request.Url.Host, uaclient);
-            }
+            // extract the context
+            HttpContextBase httpContext = (IsHttpRequestAvailable) ? new HttpContextWrapper(HttpContext.Current) : null;
+
+            // upfill and build
+            TrackPageView(httpContext, pageTitle, pageUrl, (httpContext != null && httpContext.Request != null && httpContext.Request.Url != null) ? httpContext.Request.Url.Host : null, uaclient);
         }
 
         /// <summary>
@@ -416,8 +398,11 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackPageView(HttpContextBase httpContext, string pageTitle, string pageUrl, UAClient uaclient = null)
         {
+            // check for empty page url
+            if (string.IsNullOrWhiteSpace(pageUrl)) throw new ArgumentNullException("pageUrl", "Google requires a valid URL to process page views.");
+
             // upfill and build
-            TrackPageView(httpContext, pageTitle, pageUrl, httpContext.Request.Url.Host, uaclient);
+            TrackPageView(httpContext, pageTitle, pageUrl, (httpContext != null && httpContext.Request != null && httpContext.Request.Url != null) ? httpContext.Request.Url.Host : null, uaclient);
         }
 
         /// <summary>
@@ -429,12 +414,11 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackPageView(string pageTitle, string pageUrl, string hostName, UAClient uaclient = null)
         {
-            // make sure we don't need it passed in
-            if (IsHttpRequestAvailable)
-            {
-                // upfill and build
-                TrackPageView(new HttpContextWrapper(HttpContext.Current), pageTitle, pageUrl, hostName, uaclient);
-            }
+            // check for empty page url
+            if (string.IsNullOrWhiteSpace(pageUrl)) throw new ArgumentNullException("pageUrl", "Google requires a valid URL to process page views.");
+
+            // upfill and build
+            TrackPageView((IsHttpRequestAvailable) ? new HttpContextWrapper(HttpContext.Current) : null, pageTitle, pageUrl, hostName, uaclient);
         }
         
         /// <summary>
@@ -447,11 +431,14 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackPageView(HttpContextBase httpContext, string pageTitle, string pageUrl, string hostName, UAClient uaclient = null)
         {
+            // check for empty page url
+            if (string.IsNullOrWhiteSpace(pageUrl)) throw new ArgumentNullException("pageUrl", "Google requires a valid URL to process page views.");
+
             // initialize the uaclient if null
             if (uaclient == null) uaclient = new UAClient();
 
             // build the payload
-            StringBuilder data = BuildPayload(BuildBasePayload(httpContext.Request, uaclient), BuildPageTrackPayload(pageTitle, pageUrl, hostName));
+            StringBuilder data = BuildPayload(BuildBasePayload(httpContext, uaclient), BuildPageTrackPayload(pageTitle, pageUrl, hostName));
 
             // build the http request
             HttpWebRequest request = BuildRequest(data);
@@ -459,7 +446,7 @@ namespace Echovoice.UniversalAnalytics
             // send sync and fail silently
             try
             {
-                request.GetResponse();
+                using (WebResponse response = request.GetResponse()) { }
             }
             catch { }
         }
@@ -476,6 +463,11 @@ namespace Echovoice.UniversalAnalytics
                 // upfill and build
                 TrackPageViewAsync(new HttpContextWrapper(HttpContext.Current), null, uaclient);
             }
+            else
+            {
+                // google doesnt accept page views without a url
+                throw new InvalidOperationException("Unable to find a valid HttpContext.Current, Google requires a valid URL to process page views.");
+            }
         }
 
         /// <summary>
@@ -485,6 +477,9 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackPageViewAsync(HttpContextBase httpContext, UAClient uaclient = null)
         {
+            // check for null context
+            if (httpContext == null) throw new ArgumentNullException("httpContext", "Null HttpContextBase, Google requires a valid URL to process page views.");
+
             // upfill and build
             TrackPageViewAsync(httpContext, null, uaclient);
         }
@@ -503,7 +498,12 @@ namespace Echovoice.UniversalAnalytics
                 HttpContextBase httpContext = new HttpContextWrapper(HttpContext.Current);
 
                 // upfill and build
-                TrackPageViewAsync(httpContext, pageTitle, httpContext.Request.Url.PathAndQuery, uaclient);
+                TrackPageViewAsync(httpContext, pageTitle, (httpContext != null && httpContext.Request != null && httpContext.Request.Url != null) ? httpContext.Request.Url.PathAndQuery : null, uaclient);
+            }
+            else
+            {
+                // google doesnt accept page views without a url
+                throw new InvalidOperationException("Unable to find a valid HttpContext.Current, Google requires a valid URL to process page views.");
             }
         }
 
@@ -515,8 +515,11 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackPageViewAsync(HttpContextBase httpContext, string pageTitle, UAClient uaclient = null)
         {
+            // check for null context
+            if (httpContext == null) throw new ArgumentNullException("httpContext", "Null HttpContextBase, Google requires a valid URL to process page views.");
+
             // upfill and build
-            TrackPageViewAsync(httpContext, pageTitle, httpContext.Request.Url.PathAndQuery, uaclient);
+            TrackPageViewAsync(httpContext, pageTitle, (httpContext != null && httpContext.Request != null && httpContext.Request.Url != null) ? httpContext.Request.Url.PathAndQuery : null, uaclient);
         }
 
         /// <summary>
@@ -527,15 +530,14 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackPageViewAsync(string pageTitle, string pageUrl, UAClient uaclient = null)
         {
-            // make sure we don't need it passed in
-            if (IsHttpRequestAvailable)
-            {
-                // extract the context
-                HttpContextBase httpContext = new HttpContextWrapper(HttpContext.Current);
+            // check for empty page url
+            if (string.IsNullOrWhiteSpace(pageUrl)) throw new ArgumentNullException("pageUrl", "Google requires a valid URL to process page views.");
 
-                // upfill and build
-                TrackPageViewAsync(httpContext, pageTitle, pageUrl, httpContext.Request.Url.Host, uaclient);
-            }
+            // extract the context
+            HttpContextBase httpContext = (IsHttpRequestAvailable) ? new HttpContextWrapper(HttpContext.Current) : null;
+
+            // upfill and build
+            TrackPageViewAsync(httpContext, pageTitle, pageUrl, (httpContext != null && httpContext.Request != null && httpContext.Request.Url != null) ? httpContext.Request.Url.Host : null, uaclient);
         }
 
         /// <summary>
@@ -547,8 +549,11 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackPageViewAsync(HttpContextBase httpContext, string pageTitle, string pageUrl, UAClient uaclient = null)
         {
+            // check for empty page url
+            if (string.IsNullOrWhiteSpace(pageUrl)) throw new ArgumentNullException("pageUrl", "Google requires a valid URL to process page views.");
+
             // upfill and build
-            TrackPageViewAsync(httpContext, pageTitle, pageUrl, httpContext.Request.Url.Host, uaclient);
+            TrackPageViewAsync(httpContext, pageTitle, pageUrl, (httpContext != null && httpContext.Request != null && httpContext.Request.Url != null) ? httpContext.Request.Url.Host : null, uaclient);
         }
 
         /// <summary>
@@ -560,12 +565,11 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackPageViewAsync(string pageTitle, string pageUrl, string hostName, UAClient uaclient = null)
         {
-            // make sure we don't need it passed in
-            if (IsHttpRequestAvailable)
-            {
-                // upfill and build
-                TrackPageViewAsync(new HttpContextWrapper(HttpContext.Current), pageTitle, pageUrl, hostName, uaclient);
-            }
+            // check for empty page url
+            if (string.IsNullOrWhiteSpace(pageUrl)) throw new ArgumentNullException("pageUrl", "Google requires a valid URL to process page views.");
+
+            // upfill and build
+            TrackPageViewAsync((IsHttpRequestAvailable) ? new HttpContextWrapper(HttpContext.Current) : null, pageTitle, pageUrl, hostName, uaclient);
         }
 
         /// <summary>
@@ -578,26 +582,70 @@ namespace Echovoice.UniversalAnalytics
         /// <param name="uaclient">Client override object</param>
         public void TrackPageViewAsync(HttpContextBase httpContext, string pageTitle, string pageUrl, string hostName, UAClient uaclient = null)
         {
+            // check for empty page url
+            if (string.IsNullOrWhiteSpace(pageUrl)) throw new ArgumentNullException("pageUrl", "Google requires a valid URL to process page views.");
+
             // initialize the uaclient if null
             if (uaclient == null) uaclient = new UAClient();
 
             // build the payload
-            StringBuilder data = BuildPayload(BuildBasePayload(httpContext.Request, uaclient), BuildPageTrackPayload(pageTitle, pageUrl, hostName));
+            StringBuilder data = BuildPayload(BuildBasePayload(httpContext, uaclient), BuildPageTrackPayload(pageTitle, pageUrl, hostName));
 
             // build the http request
             HttpWebRequest request = BuildRequest(data);
 
+            // send it async
+            ProcessAsync(request);
+        }
+
+        /// <summary>
+        /// Send the request async depending on the environment found
+        /// </summary>
+        /// <param name="request">the ga request to process</param>
+        private void ProcessAsync(HttpWebRequest request)
+        {
+            
             // send async and fail silently
-            // The HostingEnvironment.QueueBackgroundWorkItem method lets you schedule small background work items.
-            // ASP.NET tracks these items and prevents IIS from abruptly terminating the worker process until all background work items have completed.
-            HostingEnvironment.QueueBackgroundWorkItem(ct =>
+            bool queued_job = false;
+
+            // check for an ASP.NET application
+            if (HostingEnvironment.ApplicationHost != null)
             {
+                // The HostingEnvironment.QueueBackgroundWorkItem method lets you schedule small background work items.
+                // ASP.NET tracks these items and prevents IIS from abruptly terminating the worker process until all background work items have completed.
                 try
                 {
-                    request.GetResponse();
+                    HostingEnvironment.QueueBackgroundWorkItem(ct =>
+                    {
+                        try
+                        {
+                            using (WebResponse response = request.GetResponse()) { }
+                        }
+                        catch { }
+                    });
+
+                    // set the flag
+                    queued_job = true;
                 }
-                catch { }
-            });
+                catch (InvalidOperationException)
+                {
+                    // override fail
+                    queued_job = false;
+                }
+            }
+
+            // check for either non-iis or queued fail
+            if (!queued_job)
+            {
+                Task.Factory.StartNew(() =>
+                {
+                    try
+                    {
+                        using (WebResponse response = request.GetResponse()) { }
+                    }
+                    catch { }
+                });
+            }
         }
 
         /// <summary>
@@ -682,11 +730,14 @@ namespace Echovoice.UniversalAnalytics
         /// <summary>
         /// build the base payload for all requests regardless of type
         /// </summary>
-        /// <param name="request">the http request to extract data from</param>
+        /// <param name="httpContext">the http context to extract data from</param>
         /// <param name="uaclient">the client to override data in payload</param>
         /// <returns></returns>
-        private Dictionary<string, string> BuildBasePayload(HttpRequestBase request, UAClient uaclient)
+        private Dictionary<string, string> BuildBasePayload(HttpContextBase httpContext, UAClient uaclient)
         {
+            // extract the request
+            HttpRequestBase request = (httpContext != null) ? httpContext.Request : null;
+
             // dictionary to make it look cleaner below
             Dictionary<string, string> parameters = new Dictionary<string, string>();
 
@@ -705,7 +756,7 @@ namespace Echovoice.UniversalAnalytics
                 parameters.Add("ua", uaclient.ua);
 
             // user agent extracted from the request
-            else if (!string.IsNullOrWhiteSpace(request.UserAgent))
+            else if (request != null && !string.IsNullOrWhiteSpace(request.UserAgent))
                 parameters.Add("ua", request.UserAgent);
 
             // ip address
@@ -713,16 +764,16 @@ namespace Echovoice.UniversalAnalytics
             if (!string.IsNullOrWhiteSpace(uaclient.uip))
                 parameters.Add("uip", uaclient.uip);
 
-            // ip extracted from the request
-            else if (!string.IsNullOrWhiteSpace(request.UserHostAddress))
+            // ip extracted from the request, make sure this isnt a local request as well
+            else if (request != null && !request.IsLocal && !string.IsNullOrWhiteSpace(request.UserHostAddress))
                 parameters.Add("uip", request.UserHostAddress);
 
             // document encoding, skip default de=UTF-8
-            if (request.ContentEncoding != null && !string.IsNullOrWhiteSpace(request.ContentEncoding.HeaderName) && request.ContentEncoding.HeaderName.ToUpper() != "UTF-8")
+            if (request != null && request.ContentEncoding != null && !string.IsNullOrWhiteSpace(request.ContentEncoding.HeaderName) && request.ContentEncoding.HeaderName.ToUpper() != "UTF-8")
                 parameters.Add("de", request.ContentEncoding.HeaderName.ToUpper());
 
             // user language
-            if (request.UserLanguages != null && request.UserLanguages.Length > 0)
+            if (request != null && request.UserLanguages != null && request.UserLanguages.Length > 0)
                 parameters.Add("ul", string.Join(";", request.UserLanguages));
 
             // end
