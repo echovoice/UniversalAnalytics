@@ -6,6 +6,9 @@ A C# library for sending server-side tracking data to Google Analytics using the
 This library is available on Nuget as [UniversalAnalytics](https://www.nuget.org/packages/UniversalAnalytics).
 
 
+    PM> Install-Package UniversalAnalytics
+  
+
 
 Why use Google Universal Analytics?
 ============================
